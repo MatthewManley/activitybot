@@ -22,7 +22,7 @@ namespace ActivityBot
                 {
                     var config = new DiscordSocketConfig()
                     {
-                        GatewayIntents = Discord.GatewayIntents.GuildMessages | Discord.GatewayIntents.GuildVoiceStates
+                        GatewayIntents = Discord.GatewayIntents.AllUnprivileged
                     };
                     return new DiscordSocketClient(config);
                 });
