@@ -27,10 +27,10 @@ namespace ActivityBot
                     return new DiscordSocketClient(config);
                 });
                 services.AddMemoryCache();
+                services.Configure<AuthOptions>(hostContext.Configuration.GetSection("Auth"));
                 services.AddSingleton<Bot>();
                 services.AddHostedService<Startup>();
                 services.ConfigureInfrastructure(hostContext.Configuration);
-                services.Configure<AuthOptions>(hostContext.Configuration.GetSection("Auth"));
             }
             );
             var host = builder.Build();

@@ -46,7 +46,9 @@ namespace ActivityBot
             client.MessageReceived += Client_MessageReceived;
             client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
 
+            logger.LogInformation("Logging in");
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
+            logger.LogInformation("Starting");
             await client.StartAsync();
         }
 
@@ -58,6 +60,7 @@ namespace ActivityBot
 
         private async Task Checker()
         {
+            logger.LogInformation("Starting checker");
             var token = cancellationTokenSource.Token;
             while (!token.IsCancellationRequested)
             {
@@ -82,6 +85,7 @@ namespace ActivityBot
                             continue;
                         try
                         {
+                            logger.LogInformation("Guild {guild}, User: {user} no longer active", new { guild = group.Key, user.User });
                             await activityRepo.Delete(group.Key, user.User);
                             await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role);
                         }
@@ -92,10 +96,12 @@ namespace ActivityBot
                 }
 
             }
+            logger.LogInformation("Checker exited");
         }
 
         private async Task Client_UserVoiceStateUpdated(SocketUser user, SocketVoiceState previous, SocketVoiceState current)
         {
+            logger.LogInformation("User voice state changed");
             if (current.VoiceChannel is null ||
                 user is not SocketGuildUser guildUser)
                 return;
