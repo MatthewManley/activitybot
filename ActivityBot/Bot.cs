@@ -110,7 +110,8 @@ namespace ActivityBot
 
         private async Task Client_MessageReceived(SocketMessage rawMessage)
         {
-            logger.LogInformation("Received Message");
+            if (rawMessage.Author.IsBot || rawMessage.Author.IsWebhook)
+                return;
             if (rawMessage.Author is not SocketGuildUser guildUser)
                 return;
             await SetUserActive(guildUser);
