@@ -1,8 +1,8 @@
 ﻿using Discord.WebSocket;
+using Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
-using Infrastructure;
 
 
 namespace ActivityBot
@@ -26,6 +26,7 @@ namespace ActivityBot
                     };
                     return new DiscordSocketClient(config);
                 });
+                services.AddMemoryCache();
                 services.AddSingleton<Bot>();
                 services.AddHostedService<Startup>();
                 services.ConfigureInfrastructure(hostContext.Configuration);
