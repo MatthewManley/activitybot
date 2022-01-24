@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using ActivityBot.Commands;
+using Discord.WebSocket;
 using Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,6 +29,7 @@ namespace ActivityBot
                 });
                 services.AddMemoryCache();
                 services.Configure<AuthOptions>(hostContext.Configuration.GetSection("Auth"));
+                CommandHandler.RegisterCommands(services);
                 services.AddSingleton<Bot>();
                 services.AddHostedService<Startup>();
                 services.ConfigureInfrastructure(hostContext.Configuration);

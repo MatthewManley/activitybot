@@ -1,0 +1,25 @@
+﻿{
+  "name": "activeduration",
+  "type": 1,
+  "description": "Get or set the number of hours until the active role is removed from a user",
+  "options": [
+    {
+      "name": "get",
+      "description": "Get the number of hours until the active role is removed from a user",
+      "type": 1
+    },
+    {
+      "name": "set",
+      "description": "Set the number of hours until the active role is removed from a user",
+      "type": 1,
+      "options": [
+        {
+          "name": "hours",
+          "description": "Set the number of hours until the active role is removed from a user",
+          "type": 4,
+          "required": true
+        }
+      ]
+    }
+  ]
+}

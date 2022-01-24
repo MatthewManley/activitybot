@@ -25,18 +25,19 @@ namespace Infrastructure
                 server = serverId,
                 user = userId,
             };
-            return await dbConnection.QueryFirstAsync<ActivityEntry>(cmdText, parameters);
+            return await dbConnection.QueryFirstOrDefaultAsync<ActivityEntry>(cmdText, parameters);
         }
 
-        public async Task InsertOrUpdate(ulong serverId, ulong userId, DateTime lastActivity)
+        public async Task InsertOrUpdate(ulong serverId, ulong userId, DateTime lastActivity, bool removed = false)
         {
             using var dbConnection = await dbConnectionFactory.CreateConnection();
-            var cmdText = "INSERT INTO activity (server, user, lastactivity) VALUES (@server, @user, @lastActivity) ON DUPLICATE KEY UPDATE lastactivity=@lastActivity";
+            var cmdText = "INSERT INTO activity (server, user, lastactivity, removed) VALUES (@server, @user, @lastActivity, @removed) ON DUPLICATE KEY UPDATE lastactivity=@lastActivity, removed=@removed;";
             var parameters = new
             {
                 server = serverId,
                 user = userId,
                 lastactivity = lastActivity,
+                removed = removed,
             };
             await dbConnection.ExecuteAsync(cmdText, parameters);
         }
@@ -44,8 +45,21 @@ namespace Infrastructure
         public async Task<IEnumerable<ActivityEntry>> GetAll()
         {
             using var dbConnection = await dbConnectionFactory.CreateConnection();
-            var cmdText = "SELECT * FROM activity;";
+            var cmdText = "SELECT * FROM activity WHERE removed=FALSE;";
             return await dbConnection.QueryAsync<ActivityEntry>(cmdText);
+        }
+
+        public async Task SetRemoved(ulong serverId, ulong userId, bool removed = false)
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "UPDATE activity SET removed=@removed WHERE server = @server AND user = @user;";
+            var parameters = new
+            {
+                server = serverId,
+                user = userId,
+                removed = removed,
+            };
+            await dbConnection.ExecuteAsync(cmdText, parameters);
         }
 
         public async Task Delete(ulong serverId, ulong userId)

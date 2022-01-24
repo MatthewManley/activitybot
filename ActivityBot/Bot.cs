@@ -1,8 +1,10 @@
-﻿using Discord;
+﻿using ActivityBot.Commands;
+using Discord;
 using Discord.WebSocket;
 using Domain.Models;
 using Domain.Repos;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -19,22 +21,25 @@ namespace ActivityBot
         private readonly IActivityRepo activityRepo;
         private readonly IServerConfigRepo serverConfigRepo;
         private readonly IMemoryCache memoryCache;
+        private readonly IServiceProvider serviceProvider;
         private readonly AuthOptions authOptions;
         private readonly CancellationTokenSource cancellationTokenSource;
-        private Task checker;
+        private Timer timer;
 
         public Bot(ILogger<Bot> logger,
                    DiscordSocketClient client,
                    IActivityRepo activityRepo,
                    IServerConfigRepo serverConfigRepo,
                    IOptions<AuthOptions> authOptions,
-                   IMemoryCache memoryCache)
+                   IMemoryCache memoryCache,
+                   IServiceProvider serviceProvider)
         {
             this.logger = logger;
             this.client = client;
             this.activityRepo = activityRepo;
             this.serverConfigRepo = serverConfigRepo;
             this.memoryCache = memoryCache;
+            this.serviceProvider = serviceProvider;
             this.authOptions = authOptions.Value;
             this.cancellationTokenSource = new CancellationTokenSource();
         }
@@ -45,6 +50,7 @@ namespace ActivityBot
             client.Ready += Client_Ready;
             client.MessageReceived += Client_MessageReceived;
             client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
+            client.InteractionCreated += Client_InteractionCreated;
 
             logger.LogInformation("Logging in");
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
@@ -54,54 +60,51 @@ namespace ActivityBot
 
         private Task Client_Ready()
         {
-            checker = Task.Run(Checker);
+            timer = new Timer(async (e) => await Checker(e), null, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(5));
             return Task.CompletedTask;
         }
 
-        private async Task Checker()
+        private async Task Client_InteractionCreated(SocketInteraction arg)
         {
-            logger.LogInformation("Starting checker");
-            var token = cancellationTokenSource.Token;
-            while (!token.IsCancellationRequested)
+            var commandHandler = serviceProvider.GetRequiredService<CommandHandler>();
+            await commandHandler.Execute(arg);
+        }
+
+        private async Task Checker(object? state)
+        {
+            var now = DateTime.UtcNow;
+            logger.LogInformation("Running checker");
+            var allActivities = await activityRepo.GetAll();
+            var groups = allActivities.GroupBy(x => x.Server);
+            foreach (var group in groups)
             {
-                var now = DateTime.UtcNow;
-                await Task.Delay(1000 * 60 * 5, token);
-                if (token.IsCancellationRequested)
-                    return;
-                var allActivities = await activityRepo.GetAll();
-                var groups = allActivities.GroupBy(x => x.Server);
-                foreach (var group in groups)
+                var serverConfig = await CachedServerConfig(group.Key);
+                var server = client.GetGuild(group.Key);
+                var serverRole = server.GetRole(serverConfig.Role);
+                if (serverRole is null)
+                    continue;
+                var duration = TimeSpan.FromHours(serverConfig.Duration);
+                var cutoff = now.Subtract(duration);
+                foreach (var user in group)
                 {
-                    var serverConfig = await CachedServerConfig(group.Key);
-                    var server = client.GetGuild(group.Key);
-                    var serverRole = server.GetRole(serverConfig.Role);
-                    if (serverRole is null)
+                    if (user.LastActivity >= cutoff)
                         continue;
-                    var duration = TimeSpan.FromMinutes(serverConfig.Duration);
-                    var cutoff = now.Subtract(duration);
-                    foreach (var user in group)
+                    try
                     {
-                        if (user.LastActivity >= cutoff)
-                            continue;
-                        try
-                        {
-                            logger.LogInformation("Guild {guild}, User: {user} no longer active", new { guild = group.Key, user.User });
-                            await activityRepo.Delete(group.Key, user.User);
-                            await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role);
-                        }
-                        catch (Exception)
-                        {
-                        }
+                        logger.LogInformation($"Guild {group.Key}, User: {user.User} no longer active");
+                        await activityRepo.SetRemoved(group.Key, user.User, true);
+                        await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error while running checker");
                     }
                 }
-
             }
-            logger.LogInformation("Checker exited");
         }
 
         private async Task Client_UserVoiceStateUpdated(SocketUser user, SocketVoiceState previous, SocketVoiceState current)
         {
-            logger.LogInformation("User voice state changed");
             if (current.VoiceChannel is null ||
                 user is not SocketGuildUser guildUser)
                 return;
@@ -131,9 +134,12 @@ namespace ActivityBot
             var serverConfig = await CachedServerConfig(user.Guild.Id);
             if (serverConfig == null)
                 return;
+
+            // Stop excessive updating of user activity
             if (memoryCache.TryGetValue(user.Id, out var _))
                 return;
             memoryCache.Set<object>(user.Id, null, TimeSpan.FromSeconds(60));
+
             await activityRepo.InsertOrUpdate(user.Guild.Id, user.Id, DateTime.UtcNow);
             var role = user.Guild.GetRole(serverConfig.Role);
             if (role is not null && !user.Roles.Any(x => x.Id == serverConfig.Role))

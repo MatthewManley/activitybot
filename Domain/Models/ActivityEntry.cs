@@ -7,5 +7,6 @@ namespace Domain.Models
         public ulong Server { get; set; }
         public ulong User { get; set; }
         public DateTime LastActivity { get; set; }
+        public bool Removed { get; set; }
     }
 }

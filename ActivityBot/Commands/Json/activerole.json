@@ -1,0 +1,25 @@
+﻿{
+  "name": "activerole",
+  "type": 1,
+  "description": "Get or set the role that will be assigned to active users",
+  "options": [
+    {
+      "name": "get",
+      "description": "Get the role that will be assigned to active users",
+      "type": 1
+    },
+    {
+      "name": "set",
+      "description": "Set the role that will be assigned to active users",
+      "type": 1,
+      "options": [
+        {
+          "name": "role",
+          "description": "Set the role that will be assigned to active users",
+          "type": 8,
+          "required": true
+        }
+      ]
+    }
+  ]
+}

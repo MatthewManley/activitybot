@@ -22,7 +22,31 @@ namespace Infrastructure
             {
                 server = serverId,
             };
-            return await dbConnection.QueryFirstAsync<ServerConfig>(cmdText, parameters);
+            return await dbConnection.QueryFirstOrDefaultAsync<ServerConfig>(cmdText, parameters);
+        }
+
+        public async Task SetRole(ulong serverId, ulong roleId)
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "INSERT INTO serverconfig (server, role) VALUES (@serverId, @roleId) ON DUPLICATE KEY UPDATE role=@roleId";
+            var parameters = new
+            {
+                serverId,
+                roleId,
+            };
+            await dbConnection.ExecuteAsync(cmdText, parameters);
+        }
+
+        public async Task SetInactiveTime(ulong serverId, long time)
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "INSERT INTO serverconfig (server, duration) VALUES (@serverId, @time) ON DUPLICATE KEY UPDATE duration=@time";
+            var parameters = new
+            {
+                serverId,
+                time,
+            };
+            await dbConnection.ExecuteAsync(cmdText, parameters);
         }
     }
 }
