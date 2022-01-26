@@ -33,7 +33,7 @@ namespace ActivityBot.Commands
                     await GetSubcommand(slashCommand, guildUser);
                     return;
                 case "set":
-                    await SetSubCommand(slashCommand, guildUser);
+                    await SetSubCommand(slashCommand, guildUser, action);
                     return;
                 default:
                     throw new Exception();
@@ -43,10 +43,10 @@ namespace ActivityBot.Commands
         private async Task GetSubcommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser)
         {
             var config = await serverConfigRepo.Get(socketGuildUser.Guild.Id);
-            await slashCommand.RespondAsync($"{config.Duration} hours", ephemeral: true);
+            await slashCommand.RespondAsync($"Users  will be marked as inactive after {config.Duration} hours of inactivity", ephemeral: true);
         }
 
-        private async Task SetSubCommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser)
+        private async Task SetSubCommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser, SocketSlashCommandDataOption dataOption)
         {
             if (!socketGuildUser.GuildPermissions.Administrator)
             {
@@ -54,14 +54,14 @@ namespace ActivityBot.Commands
                 return;
             }
 
-            var hours = slashCommand.Data.Options.FirstOrDefault()?.Value as long?;
+            var hours = dataOption.Options.FirstOrDefault()?.Value as long?;
             if (hours is null)
             {
                 throw new Exception();
             }
 
             await serverConfigRepo.SetInactiveTime(socketGuildUser.Guild.Id, hours.Value);
-            await slashCommand.RespondAsync($"Done! Users will be marked as inactive after {hours} hours", ephemeral: true);
+            await slashCommand.RespondAsync($"Done! Users will be marked as inactive after {hours} hours of inactivity", ephemeral: true);
         }
     }
 }

@@ -48,7 +48,7 @@ namespace ActivityBot.Commands
 
         private async Task RespondProblem(SocketInteraction socketInteraction)
         {
-            await socketInteraction.RespondAsync("Sorry, something went wrong!", ephemeral: true);
+            await socketInteraction.RespondAsync("Sorry, something went wrong! Message Matt#3809 or join my server https://discord.gg/czEz6u4wxB for assistance!", ephemeral: true);
         }
 
         public static IServiceCollection RegisterCommands(IServiceCollection services)

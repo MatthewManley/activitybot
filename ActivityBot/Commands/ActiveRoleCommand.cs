@@ -33,7 +33,7 @@ namespace ActivityBot.Commands
                     await GetSubcommand(slashCommand, guildUser);
                     return;
                 case "set":
-                    await SetSubCommand(slashCommand, guildUser);
+                    await SetSubCommand(slashCommand, guildUser, action);
                     return;
                 default:
                     throw new Exception();
@@ -43,10 +43,10 @@ namespace ActivityBot.Commands
         private async Task GetSubcommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser)
         {
             var config = await serverConfigRepo.Get(socketGuildUser.Guild.Id);
-            await slashCommand.RespondAsync($"<@&{config.Role}>", ephemeral: true);
+            await slashCommand.RespondAsync($"Active users are given the role <@&{config.Role}>", ephemeral: true);
         }
 
-        private async Task SetSubCommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser)
+        private async Task SetSubCommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser, SocketSlashCommandDataOption option)
         {
             if (!socketGuildUser.GuildPermissions.Administrator)
             {
@@ -54,14 +54,14 @@ namespace ActivityBot.Commands
                 return;
             }
 
-            var role = slashCommand.Data.Options.FirstOrDefault()?.Value as SocketRole;
+            var role = option.Options.FirstOrDefault()?.Value as SocketRole;
             if (role is null)
             {
                 throw new Exception();
             }
 
             await serverConfigRepo.SetRole(socketGuildUser.Guild.Id, role.Id);
-            await slashCommand.RespondAsync($"Done! Active users will now be given the role <@&{role.Id}", ephemeral: true);
+            await slashCommand.RespondAsync($"Done! Active users will now be given the role <@&{role.Id}>", ephemeral: true);
         }
     }
 }
