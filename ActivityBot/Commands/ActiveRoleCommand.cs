@@ -34,6 +34,7 @@ namespace ActivityBot.Commands
                     await GetSubcommand(slashCommand, guildUser);
                     return;
                 case "delete":
+                    await DeleteSubCommand(slashCommand, guildUser);
                     return;
                 case "set":
                     await SetSubCommand(slashCommand, guildUser, action);

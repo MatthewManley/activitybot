@@ -79,8 +79,10 @@ namespace ActivityBot
             foreach (var group in groups)
             {
                 var serverConfig = await CachedServerConfig(group.Key);
+                if (serverConfig is null || serverConfig.Role is null)
+                    continue;
                 var server = client.GetGuild(group.Key);
-                var serverRole = server.GetRole(serverConfig.Role);
+                var serverRole = server.GetRole(serverConfig.Role.Value);
                 if (serverRole is null)
                     continue;
                 var duration = TimeSpan.FromHours(serverConfig.Duration);
@@ -93,7 +95,7 @@ namespace ActivityBot
                     {
                         logger.LogInformation($"Guild {group.Key}, User: {user.User} no longer active");
                         await activityRepo.SetRemoved(group.Key, user.User, true);
-                        await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role);
+                        await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role.Value);
                     }
                     catch (Exception ex)
                     {
@@ -132,7 +134,7 @@ namespace ActivityBot
         private async Task SetUserActive(SocketGuildUser user)
         {
             var serverConfig = await CachedServerConfig(user.Guild.Id);
-            if (serverConfig == null)
+            if (serverConfig is null || serverConfig.Role is null)
                 return;
 
             // Stop excessive updating of user activity
@@ -141,7 +143,7 @@ namespace ActivityBot
             memoryCache.Set<object>(user.Id, null, TimeSpan.FromSeconds(60));
 
             await activityRepo.InsertOrUpdate(user.Guild.Id, user.Id, DateTime.UtcNow);
-            var role = user.Guild.GetRole(serverConfig.Role);
+            var role = user.Guild.GetRole(serverConfig.Role.Value);
             if (role is not null && !user.Roles.Any(x => x.Id == serverConfig.Role))
             {
                 await user.AddRoleAsync(role);
