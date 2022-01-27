@@ -51,11 +51,31 @@ namespace ActivityBot
             client.MessageReceived += Client_MessageReceived;
             client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
             client.InteractionCreated += Client_InteractionCreated;
+            client.JoinedGuild += Client_JoinedGuild;
 
             logger.LogInformation("Logging in");
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
             logger.LogInformation("Starting");
             await client.StartAsync();
+        }
+
+        private async Task Client_JoinedGuild(SocketGuild arg)
+        {
+            var channel = await client.GetChannelAsync(936310272967204905);
+            if (channel is not SocketTextChannel textChannel)
+            {
+                logger.LogError("Invalid announce channel");
+                return;
+            }
+            await textChannel.SendMessageAsync(
+                "Joined a new server!\n" +
+                $"Id: {arg.Id}\n" +
+                $"Name: {arg.Name}\n" +
+                $"Member Count: {arg.MemberCount}\n" +
+                $"Icon: {arg.IconUrl}\n" +
+                $"Owner: {arg.Owner.Username}#{arg.Owner.Discriminator}\n" +
+                $"Owner Id: {arg.Owner.Id}"
+               );
         }
 
         private Task Client_Ready()
