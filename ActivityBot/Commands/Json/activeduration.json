@@ -17,6 +17,8 @@
           "name": "hours",
           "description": "Set the number of hours until the active role is removed from a user",
           "type": 4,
+          "min_value": 1,
+          "max_value": 4380,
           "required": true
         }
       ]

@@ -67,7 +67,7 @@ namespace ActivityBot
         private async Task Client_InteractionCreated(SocketInteraction arg)
         {
             var commandHandler = serviceProvider.GetRequiredService<CommandHandler>();
-            await commandHandler.Execute(arg);
+            await commandHandler.Interact(arg);
         }
 
         private async Task Checker(object? state)

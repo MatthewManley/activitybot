@@ -20,6 +20,11 @@
           "required": true
         }
       ]
+    },
+    {
+      "name": "delete",
+      "description": "Stop the bot from assigning and removing roles from users",
+      "type": 1
     }
   ]
 }

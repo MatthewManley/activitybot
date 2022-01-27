@@ -25,7 +25,7 @@ namespace Infrastructure
             return await dbConnection.QueryFirstOrDefaultAsync<ServerConfig>(cmdText, parameters);
         }
 
-        public async Task SetRole(ulong serverId, ulong roleId)
+        public async Task SetRole(ulong serverId, ulong? roleId)
         {
             using var dbConnection = await dbConnectionFactory.CreateConnection();
             var cmdText = "INSERT INTO serverconfig (server, role) VALUES (@serverId, @roleId) ON DUPLICATE KEY UPDATE role=@roleId";

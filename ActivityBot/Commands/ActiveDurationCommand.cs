@@ -15,7 +15,7 @@ namespace ActivityBot.Commands
             this.serverConfigRepo = serverConfigRepo;
         }
 
-        public async Task Execute(SocketSlashCommand slashCommand)
+        public async Task Interact(SocketSlashCommand slashCommand)
         {
             if (slashCommand.User is not SocketGuildUser guildUser)
             {

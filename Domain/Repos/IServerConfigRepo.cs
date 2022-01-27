@@ -6,7 +6,7 @@ namespace Domain.Repos
     public interface IServerConfigRepo
     {
         Task<ServerConfig> Get(ulong serverId);
-        Task SetRole(ulong serverId, ulong roleId);
+        Task SetRole(ulong serverId, ulong? roleId);
         Task SetInactiveTime(ulong serverId, long time);
     }
 }

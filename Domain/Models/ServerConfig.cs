@@ -4,6 +4,6 @@
     {
         public ulong ServerId { get; set; }
         public long Duration { get; set; }
-        public ulong Role { get; set; }
+        public ulong? Role { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace ActivityBot.Commands
 {
@@ -11,15 +12,20 @@ namespace ActivityBot.Commands
         private readonly ILogger<CommandHandler> logger;
         private readonly ActiveRoleCommand activeRoleCommand;
         private readonly ActiveDurationCommand activeDurationCommand;
+        private readonly HelpCommand helpCommand;
 
-        public CommandHandler(ILogger<CommandHandler> logger, ActiveRoleCommand activeRoleCommand, ActiveDurationCommand activeDurationCommand)
+        public CommandHandler(ILogger<CommandHandler> logger,
+                              ActiveRoleCommand activeRoleCommand,
+                              ActiveDurationCommand activeDurationCommand,
+                              HelpCommand helpCommand)
         {
             this.logger = logger;
             this.activeRoleCommand = activeRoleCommand;
             this.activeDurationCommand = activeDurationCommand;
+            this.helpCommand = helpCommand;
         }
 
-        public async Task Execute(SocketInteraction socketInteraction)
+        public async Task Interact(SocketInteraction socketInteraction)
         {
             try
             {
@@ -28,27 +34,30 @@ namespace ActivityBot.Commands
                     switch (slashCommand.CommandName)
                     {
                         case "activerole":
-                            await activeRoleCommand.Execute(slashCommand);
+                            await activeRoleCommand.Interact(slashCommand);
                             return;
                         case "activeduration":
-                            await activeDurationCommand.Execute(slashCommand);
+                            await activeDurationCommand.Interact(slashCommand);
+                            return;
+                        case "help":
+                            await helpCommand.Interact(slashCommand);
                             return;
                         default:
-                            await RespondProblem(socketInteraction);
+                            await InteractRespondProblem(socketInteraction);
                             return;
                     }
                 }
             }
             catch (Exception ex)
             {
-                await RespondProblem(socketInteraction);
+                await InteractRespondProblem(socketInteraction);
                 logger.LogError(ex, "Error executing interaction");
             }
         }
 
-        private async Task RespondProblem(SocketInteraction socketInteraction)
+        private async Task InteractRespondProblem(SocketInteraction socketInteraction)
         {
-            await socketInteraction.RespondAsync("Sorry, something went wrong! Message Matt#3809 or join my server https://discord.gg/czEz6u4wxB for assistance!", ephemeral: true);
+            await socketInteraction.RespondAsync("Sorry, something went wrong! You can join my support server https://discord.gg/czEz6u4wxB for assistance!", ephemeral: true);
         }
 
         public static IServiceCollection RegisterCommands(IServiceCollection services)
@@ -56,6 +65,7 @@ namespace ActivityBot.Commands
             services.AddTransient<CommandHandler>();
             services.AddTransient<ActiveRoleCommand>();
             services.AddTransient<ActiveDurationCommand>();
+            services.AddTransient<HelpCommand>();
             return services;
         }
     }
