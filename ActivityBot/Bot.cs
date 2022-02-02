@@ -61,6 +61,11 @@ namespace ActivityBot
 
         private async Task Client_JoinedGuild(SocketGuild arg)
         {
+            // TODO: replace with banned server list
+            if (arg.Id == 819899570728337418)
+            {
+                await arg.LeaveAsync();
+            }
             var channel = await client.GetChannelAsync(936310272967204905);
             if (channel is not SocketTextChannel textChannel)
             {
