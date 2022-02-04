@@ -56,7 +56,7 @@ namespace ActivityBot
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
             logger.LogInformation("Starting");
             await client.StartAsync();
-            timer = new Timer(async (e) => await Checker(e), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
+            timer = new Timer(async (e) => await Checker(e), new { }, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
         }
 
         private async Task Client_JoinedGuild(SocketGuild arg)
@@ -89,7 +89,7 @@ namespace ActivityBot
             await commandHandler.Interact(arg);
         }
 
-        private async Task Checker(object? state)
+        private async Task Checker(object state)
         {
             var now = DateTime.UtcNow;
             logger.LogInformation("Running checker");
