@@ -15,7 +15,7 @@ namespace ActivityBot
             var builder = Host.CreateDefaultBuilder(args);
             builder.ConfigureAppConfiguration((hostContext, builder) =>
             {
-                builder.SetupConfiguration();
+                builder.SetupConfiguration(hostContext.HostingEnvironment.EnvironmentName);
             });
             builder.ConfigureServices((hostContext, services) =>
             {

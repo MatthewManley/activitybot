@@ -47,7 +47,6 @@ namespace ActivityBot
         internal async Task Run()
         {
             client.Log += Log;
-            client.Ready += Client_Ready;
             client.MessageReceived += Client_MessageReceived;
             client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
             client.InteractionCreated += Client_InteractionCreated;
@@ -57,6 +56,7 @@ namespace ActivityBot
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
             logger.LogInformation("Starting");
             await client.StartAsync();
+            timer = new Timer(async (e) => await Checker(e), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
         }
 
         private async Task Client_JoinedGuild(SocketGuild arg)
@@ -81,12 +81,6 @@ namespace ActivityBot
                 $"Owner: {arg.Owner.Username}#{arg.Owner.Discriminator}\n" +
                 $"Owner Id: {arg.Owner.Id}"
                );
-        }
-
-        private Task Client_Ready()
-        {
-            timer = new Timer(async (e) => await Checker(e), null, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(5));
-            return Task.CompletedTask;
         }
 
         private async Task Client_InteractionCreated(SocketInteraction arg)
@@ -122,9 +116,13 @@ namespace ActivityBot
                         await activityRepo.SetRemoved(group.Key, user.User, true);
                         await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role.Value);
                     }
+                    catch (Discord.Net.HttpException ex)
+                    {
+                        logger.LogError(ex, "HttpException while removing role");
+                    }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error while running checker");
+                        logger.LogError(ex, "Error while removing role!");
                     }
                 }
             }

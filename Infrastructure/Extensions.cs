@@ -16,9 +16,9 @@ namespace Infrastructure
             return serviceCollection;
         }
 
-        public static IConfigurationBuilder SetupConfiguration(this IConfigurationBuilder configurationBuilder)
+        public static IConfigurationBuilder SetupConfiguration(this IConfigurationBuilder configurationBuilder, string environment = "Development")
         {
-            return configurationBuilder.AddSystemsManager("/ActivityBot/Production/");
+            return configurationBuilder.AddSystemsManager($"/ActivityBot/{environment}/");
         }
     }
 }
