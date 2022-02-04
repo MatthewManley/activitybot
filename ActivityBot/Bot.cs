@@ -101,6 +101,8 @@ namespace ActivityBot
                 if (serverConfig is null || serverConfig.Role is null)
                     continue;
                 var server = client.GetGuild(group.Key);
+                if (server is null) // bot is no longer in the server, perhaps we should remove the configuration and all activity?
+                    continue;
                 var serverRole = server.GetRole(serverConfig.Role.Value);
                 if (serverRole is null)
                     continue;
