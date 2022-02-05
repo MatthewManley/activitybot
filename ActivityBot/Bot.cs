@@ -97,10 +97,11 @@ namespace ActivityBot
             var groups = allActivities.GroupBy(x => x.Server);
             foreach (var group in groups)
             {
-                var serverConfig = await CachedServerConfig(group.Key);
+                var serverId = group.Key;
+                var serverConfig = await CachedServerConfig(serverId);
                 if (serverConfig is null || serverConfig.Role is null)
                     continue;
-                var server = client.GetGuild(group.Key);
+                var server = client.GetGuild(serverId);
                 if (server is null) // bot is no longer in the server, perhaps we should remove the configuration and all activity?
                     continue;
                 var serverRole = server.GetRole(serverConfig.Role.Value);
@@ -108,15 +109,15 @@ namespace ActivityBot
                     continue;
                 var duration = TimeSpan.FromHours(serverConfig.Duration);
                 var cutoff = now.Subtract(duration);
-                foreach (var user in group)
+                foreach (var activityEntry in group)
                 {
-                    if (user.LastActivity >= cutoff)
+                    if (activityEntry.LastActivity >= cutoff)
                         continue;
                     try
                     {
-                        logger.LogInformation($"Guild {group.Key}, User: {user.User} no longer active");
-                        await activityRepo.SetRemoved(group.Key, user.User, true);
-                        await client.Rest.RemoveRoleAsync(group.Key, user.User, serverConfig.Role.Value);
+                        logger.LogInformation($"Guild {serverId}, User: {activityEntry.User} no longer active");
+                        await activityRepo.SetRemoved(serverId, activityEntry.User, true);
+                        await client.Rest.RemoveRoleAsync(serverId, activityEntry.User, serverConfig.Role.Value);
                     }
                     catch (Discord.Net.HttpException ex)
                     {

@@ -4,6 +4,7 @@ using Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 
 namespace ActivityBot
@@ -13,6 +14,10 @@ namespace ActivityBot
         public static async Task Main(string[] args)
         {
             var builder = Host.CreateDefaultBuilder(args);
+            builder.ConfigureLogging(logging =>
+            {
+                logging.AddAWSProvider();
+            });
             builder.ConfigureAppConfiguration((hostContext, builder) =>
             {
                 builder.SetupConfiguration(hostContext.HostingEnvironment.EnvironmentName);
