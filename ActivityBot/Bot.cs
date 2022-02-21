@@ -159,6 +159,8 @@ namespace ActivityBot
 
         private async Task SetUserActive(SocketGuildUser user)
         {
+            if (user.IsBot || user.IsWebhook)
+                return;
             var serverConfig = await CachedServerConfig(user.Guild.Id);
             if (serverConfig is null || serverConfig.Role is null)
                 return;
