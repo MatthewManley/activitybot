@@ -48,7 +48,8 @@ namespace ActivityBot.Commands
 
         private async Task SetSubCommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser, SocketSlashCommandDataOption dataOption)
         {
-            if (!socketGuildUser.GuildPermissions.Administrator)
+            // TODO: move owner id to config
+            if (!socketGuildUser.GuildPermissions.Administrator && socketGuildUser.Id != 107649869665046528)
             {
                 await slashCommand.RespondAsync("You must have administrator permission to run this command", ephemeral: true);
                 return;
