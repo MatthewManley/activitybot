@@ -13,16 +13,19 @@ namespace ActivityBot.Commands
         private readonly ActiveRoleCommand activeRoleCommand;
         private readonly ActiveDurationCommand activeDurationCommand;
         private readonly HelpCommand helpCommand;
+        private readonly StatsCommand statsCommand;
 
         public CommandHandler(ILogger<CommandHandler> logger,
                               ActiveRoleCommand activeRoleCommand,
                               ActiveDurationCommand activeDurationCommand,
-                              HelpCommand helpCommand)
+                              HelpCommand helpCommand,
+                              StatsCommand statsCommand)
         {
             this.logger = logger;
             this.activeRoleCommand = activeRoleCommand;
             this.activeDurationCommand = activeDurationCommand;
             this.helpCommand = helpCommand;
+            this.statsCommand = statsCommand;
         }
 
         public async Task Interact(SocketInteraction socketInteraction)
@@ -41,6 +44,9 @@ namespace ActivityBot.Commands
                             return;
                         case "help":
                             await helpCommand.Interact(slashCommand);
+                            return;
+                        case "stats":
+                            await statsCommand.Interact(slashCommand);
                             return;
                         default:
                             await InteractRespondProblem(socketInteraction);
@@ -66,6 +72,7 @@ namespace ActivityBot.Commands
             services.AddTransient<ActiveRoleCommand>();
             services.AddTransient<ActiveDurationCommand>();
             services.AddTransient<HelpCommand>();
+            services.AddTransient<StatsCommand>();
             return services;
         }
     }
