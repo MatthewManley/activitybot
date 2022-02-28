@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ActivityBot.Commands
 {
-    public class ActiveDurationCommand
+    public class ActiveDurationCommand : ISocketSlashCommandHandler
     {
         private readonly IServerConfigRepo serverConfigRepo;
 
@@ -43,7 +43,7 @@ namespace ActivityBot.Commands
         private async Task GetSubcommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser)
         {
             var config = await serverConfigRepo.Get(socketGuildUser.Guild.Id);
-            await slashCommand.RespondAsync($"Users  will be marked as inactive after {config.Duration} hours of inactivity", ephemeral: true);
+            await slashCommand.RespondAsync($"Users will be marked as inactive after {config.Duration} hours of inactivity", ephemeral: true);
         }
 
         private async Task SetSubCommand(SocketSlashCommand slashCommand, SocketGuildUser socketGuildUser, SocketSlashCommandDataOption dataOption)

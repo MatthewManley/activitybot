@@ -73,5 +73,16 @@ namespace Infrastructure
             };
             await dbConnection.ExecuteAsync(cmdText, parameters);
         }
+
+        public async Task<IEnumerable<ActivityEntry>> GetAllForUser(ulong userId)
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "SELECT * FROM activity WHERE user = @user;";
+            var parameters = new
+            {
+                user = userId
+            };
+            return await dbConnection.QueryAsync<ActivityEntry>(cmdText, parameters);
+        }
     }
 }

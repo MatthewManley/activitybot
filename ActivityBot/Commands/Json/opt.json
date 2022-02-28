@@ -1,0 +1,22 @@
+{
+  "name": "opt",
+  "type": 1,
+  "description": "Opt out or in from the bot tracking and assigning active roles to you",
+  "options": [
+    {
+      "name": "in",
+      "description": "Allow the bot to start tracking your activity and assign you active roles",
+      "type": 1
+    },
+    {
+      "name": "out",
+      "description": "Stop the bot from tracking you and assigning you active roles, all active roles will be removed",
+      "type": 1
+    },
+    {
+      "name": "status",
+      "description": "See if you are opted in/or of activity tracking",
+      "type": 1
+    }
+  ]
+}

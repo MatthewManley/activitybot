@@ -1,14 +1,11 @@
 ﻿using Discord.WebSocket;
 using Domain.Repos;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ActivityBot.Commands
 {
-    public class HelpCommand
+    public class HelpCommand : ISocketSlashCommandHandler
     {
         private readonly IServerConfigRepo serverConfigRepo;
         private readonly DiscordSocketClient discordSocketClient;

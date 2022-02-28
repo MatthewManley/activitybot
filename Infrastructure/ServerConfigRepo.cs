@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Domain.Models;
 using Domain.Repos;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Infrastructure
@@ -47,6 +48,13 @@ namespace Infrastructure
                 time,
             };
             await dbConnection.ExecuteAsync(cmdText, parameters);
+        }
+
+        public async Task<IEnumerable<ServerConfig>> GetAll()
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "SELECT * FROM serverconfig;";
+            return await dbConnection.QueryAsync<ServerConfig>(cmdText);
         }
     }
 }

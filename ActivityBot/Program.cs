@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Discord;
 
 
 namespace ActivityBot
@@ -28,7 +29,7 @@ namespace ActivityBot
                 {
                     var config = new DiscordSocketConfig()
                     {
-                        GatewayIntents = Discord.GatewayIntents.AllUnprivileged
+                        GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildVoiceStates | GatewayIntents.GuildMessages | GatewayIntents.DirectMessages
                     };
                     return new DiscordSocketClient(config);
                 });

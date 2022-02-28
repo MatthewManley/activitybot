@@ -22,6 +22,7 @@ namespace ActivityBot
         private readonly IServerConfigRepo serverConfigRepo;
         private readonly IMemoryCache memoryCache;
         private readonly IServiceProvider serviceProvider;
+        private readonly IOptRepo optRepo;
         private readonly AuthOptions authOptions;
         private readonly CancellationTokenSource cancellationTokenSource;
         private Timer timer;
@@ -32,7 +33,8 @@ namespace ActivityBot
                    IServerConfigRepo serverConfigRepo,
                    IOptions<AuthOptions> authOptions,
                    IMemoryCache memoryCache,
-                   IServiceProvider serviceProvider)
+                   IServiceProvider serviceProvider,
+                   IOptRepo optRepo)
         {
             this.logger = logger;
             this.client = client;
@@ -40,6 +42,7 @@ namespace ActivityBot
             this.serverConfigRepo = serverConfigRepo;
             this.memoryCache = memoryCache;
             this.serviceProvider = serviceProvider;
+            this.optRepo = optRepo;
             this.authOptions = authOptions.Value;
             this.cancellationTokenSource = new CancellationTokenSource();
         }
@@ -66,21 +69,6 @@ namespace ActivityBot
             {
                 await arg.LeaveAsync();
             }
-            var channel = await client.GetChannelAsync(936310272967204905);
-            if (channel is not SocketTextChannel textChannel)
-            {
-                logger.LogError("Invalid announce channel");
-                return;
-            }
-            await textChannel.SendMessageAsync(
-                "Joined a new server!\n" +
-                $"Id: {arg.Id}\n" +
-                $"Name: {arg.Name}\n" +
-                $"Member Count: {arg.MemberCount}\n" +
-                $"Icon: {arg.IconUrl}\n" +
-                $"Owner: {arg.Owner.Username}#{arg.Owner.Discriminator}\n" +
-                $"Owner Id: {arg.Owner.Id}"
-               );
         }
 
         private async Task Client_InteractionCreated(SocketInteraction arg)
@@ -133,6 +121,8 @@ namespace ActivityBot
 
         private async Task Client_UserVoiceStateUpdated(SocketUser user, SocketVoiceState previous, SocketVoiceState current)
         {
+            if (user.IsBot || user.IsWebhook)
+                return;
             if (current.VoiceChannel is null ||
                 user is not SocketGuildUser guildUser)
                 return;
@@ -163,6 +153,13 @@ namespace ActivityBot
                 return;
             var serverConfig = await CachedServerConfig(user.Guild.Id);
             if (serverConfig is null || serverConfig.Role is null)
+                return;
+
+            var optedOut = await memoryCache.GetOrCreateAsync($"optout:{user.Id}", async (ICacheEntry cacheEntry) => {
+                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(2);
+                return await optRepo.Get(user.Id);
+             });
+            if (optedOut)
                 return;
 
             // Stop excessive updating of user activity

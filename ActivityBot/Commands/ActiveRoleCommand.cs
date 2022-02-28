@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ActivityBot.Commands
 {
-    public class ActiveRoleCommand
+    public class ActiveRoleCommand : ISocketSlashCommandHandler
     {
         private readonly IServerConfigRepo serverConfigRepo;
 

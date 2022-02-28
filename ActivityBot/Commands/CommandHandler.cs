@@ -4,28 +4,37 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace ActivityBot.Commands
 {
     public class CommandHandler
     {
         private readonly ILogger<CommandHandler> logger;
-        private readonly ActiveRoleCommand activeRoleCommand;
-        private readonly ActiveDurationCommand activeDurationCommand;
-        private readonly HelpCommand helpCommand;
-        private readonly StatsCommand statsCommand;
+        private readonly IServiceProvider serviceProvider;
+        private readonly Dictionary<string, Type> pair = new Dictionary<string, Type>()
+        {
+            { "activerole", typeof(ActiveRoleCommand) },
+            { "activeduration", typeof(ActiveDurationCommand) },
+            { "help", typeof(HelpCommand) },
+            { "stats", typeof(StatsCommand) },
+            { "opt", typeof(OptCommand) },
+        };  
 
-        public CommandHandler(ILogger<CommandHandler> logger,
-                              ActiveRoleCommand activeRoleCommand,
-                              ActiveDurationCommand activeDurationCommand,
-                              HelpCommand helpCommand,
-                              StatsCommand statsCommand)
+        public CommandHandler(ILogger<CommandHandler> logger, IServiceProvider serviceProvider)
         {
             this.logger = logger;
-            this.activeRoleCommand = activeRoleCommand;
-            this.activeDurationCommand = activeDurationCommand;
-            this.helpCommand = helpCommand;
-            this.statsCommand = statsCommand;
+            this.serviceProvider = serviceProvider;
+        }
+
+        private ISocketSlashCommandHandler GetCommandHandler(string commandName)
+        {
+            if (pair.TryGetValue(commandName, out Type handlerType))
+            {
+                var result = serviceProvider.GetRequiredService(handlerType);
+                return (ISocketSlashCommandHandler)result;
+            }
+            return null;
         }
 
         public async Task Interact(SocketInteraction socketInteraction)
@@ -34,24 +43,19 @@ namespace ActivityBot.Commands
             {
                 if (socketInteraction is SocketSlashCommand slashCommand)
                 {
-                    switch (slashCommand.CommandName)
+                    var handler = GetCommandHandler(slashCommand.CommandName);
+                    if (handler is null)
                     {
-                        case "activerole":
-                            await activeRoleCommand.Interact(slashCommand);
-                            return;
-                        case "activeduration":
-                            await activeDurationCommand.Interact(slashCommand);
-                            return;
-                        case "help":
-                            await helpCommand.Interact(slashCommand);
-                            return;
-                        case "stats":
-                            await statsCommand.Interact(slashCommand);
-                            return;
-                        default:
-                            await InteractRespondProblem(socketInteraction);
-                            return;
+                        await InteractRespondProblem(socketInteraction);
                     }
+                    else
+                    {
+                        await handler.Interact(slashCommand);
+                    }
+                }
+                else
+                {
+                    await InteractRespondProblem(socketInteraction);
                 }
             }
             catch (Exception ex)
@@ -73,6 +77,7 @@ namespace ActivityBot.Commands
             services.AddTransient<ActiveDurationCommand>();
             services.AddTransient<HelpCommand>();
             services.AddTransient<StatsCommand>();
+            services.AddTransient<OptCommand>();
             return services;
         }
     }

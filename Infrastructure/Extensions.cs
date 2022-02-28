@@ -13,6 +13,7 @@ namespace Infrastructure
             serviceCollection.AddTransient<DbConnectionFactory>();
             serviceCollection.AddTransient<IActivityRepo, ActivityRepo>();
             serviceCollection.AddTransient<IServerConfigRepo, ServerConfigRepo>();
+            serviceCollection.AddTransient<IOptRepo, OptRepo>();
             return serviceCollection;
         }
 
