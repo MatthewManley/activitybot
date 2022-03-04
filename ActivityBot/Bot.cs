@@ -58,17 +58,8 @@ namespace ActivityBot
             logger.LogInformation("Logging in");
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
             logger.LogInformation("Starting");
-            try
-            {
-                var test = await client.Rest.GetGuildAsync(919754953688510524);
-            }
-            catch (Discord.Net.HttpException ex)
-            {
-                throw;
-            }
-            Console.WriteLine();
-            //await client.StartAsync();
-            //timer = new Timer(async (e) => await Checker(e), new { }, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
+            await client.StartAsync();
+            timer = new Timer(async (e) => await Checker(e), new { }, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
         }
 
         private async Task Client_JoinedGuild(SocketGuild arg)
