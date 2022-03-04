@@ -109,6 +109,11 @@ namespace ActivityBot
                             await serverConfigRepo.SetRole(serverConfig.Server, null);
                             break;
                         }
+                        else if (ex.DiscordCode == DiscordErrorCode.UnknownMember)
+                        {
+                            logger.LogInformation("User no longer in server, deleting activity entry");
+                            await activityRepo.Delete(activityEntry);
+                        }
                         else
                         {
                             logger.LogError(ex, "HttpException while removing role {Role} from user {User} in guild {Guild}", serverConfig.Role, activityEntry.User, serverConfig.Server);
