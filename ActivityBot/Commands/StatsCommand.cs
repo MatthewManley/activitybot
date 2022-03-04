@@ -25,11 +25,11 @@ namespace ActivityBot.Commands
         public async Task Interact(SocketSlashCommand slashCommand)
         {
             StatsResponse counts;
-            //if (memoryCache.TryGetValue("guildCount", out counts))
-            //{
-            //    await slashCommand.RespondAsync($"Total Guilds: {counts.TotalCount}\nConfigured Guilds: {counts.ConfiguredCount}");
-            //    return;
-            //}
+            if (memoryCache.TryGetValue("guildCount", out counts))
+            {
+                await slashCommand.RespondAsync($"Total Guilds: {counts.TotalCount}\nConfigured Guilds: {counts.ConfiguredCount}");
+                return;
+            }
             await slashCommand.DeferAsync();
             var guilds = await discordSocketClient.Rest.GetGuildsAsync();
             var guildIds = guilds.Select(x => x.Id).ToHashSet();

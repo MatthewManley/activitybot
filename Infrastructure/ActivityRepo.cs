@@ -49,7 +49,7 @@ namespace Infrastructure
             return await dbConnection.QueryAsync<ActivityEntry>(cmdText);
         }
 
-        public async Task SetRemoved(ulong serverId, ulong userId, bool removed = false)
+        public async Task SetRemovalStatus(ulong serverId, ulong userId, ActivityEntryStatus activityEntryStatus)
         {
             using var dbConnection = await dbConnectionFactory.CreateConnection();
             var cmdText = "UPDATE activity SET removed=@removed WHERE server = @server AND user = @user;";
@@ -57,7 +57,7 @@ namespace Infrastructure
             {
                 server = serverId,
                 user = userId,
-                removed = removed,
+                removed = activityEntryStatus,
             };
             await dbConnection.ExecuteAsync(cmdText, parameters);
         }
@@ -81,6 +81,17 @@ namespace Infrastructure
             var parameters = new
             {
                 user = userId
+            };
+            return await dbConnection.QueryAsync<ActivityEntry>(cmdText, parameters);
+        }
+
+        public async Task<IEnumerable<ActivityEntry>> GetAssignedForServer(ulong serverId)
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "SELECT * FROM activity WHERE server = @server AND removed = 1;";
+            var parameters = new
+            {
+                server = serverId
             };
             return await dbConnection.QueryAsync<ActivityEntry>(cmdText, parameters);
         }

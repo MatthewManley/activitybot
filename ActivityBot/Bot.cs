@@ -58,8 +58,17 @@ namespace ActivityBot
             logger.LogInformation("Logging in");
             await client.LoginAsync(TokenType.Bot, authOptions.BotKey);
             logger.LogInformation("Starting");
-            await client.StartAsync();
-            timer = new Timer(async (e) => await Checker(e), new { }, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
+            try
+            {
+                var test = await client.Rest.GetGuildAsync(919754953688510524);
+            }
+            catch (Discord.Net.HttpException ex)
+            {
+                throw;
+            }
+            Console.WriteLine();
+            //await client.StartAsync();
+            //timer = new Timer(async (e) => await Checker(e), new { }, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
         }
 
         private async Task Client_JoinedGuild(SocketGuild arg)
@@ -79,41 +88,46 @@ namespace ActivityBot
 
         private async Task Checker(object state)
         {
-            var now = DateTime.UtcNow;
-            logger.LogInformation("Running checker");
+            logger.LogDebug("Running checker");
             var allActivities = await activityRepo.GetAll();
             var groups = allActivities.GroupBy(x => x.Server);
-            foreach (var group in groups)
+            var serverConfigs = await serverConfigRepo.GetAllWithRole();
+            foreach (var serverConfig in serverConfigs)
             {
-                var serverId = group.Key;
-                var serverConfig = await CachedServerConfig(serverId);
-                if (serverConfig is null || serverConfig.Role is null)
-                    continue;
-                var server = client.GetGuild(serverId);
-                if (server is null) // bot is no longer in the server, perhaps we should remove the configuration and all activity?
-                    continue;
-                var serverRole = server.GetRole(serverConfig.Role.Value);
-                if (serverRole is null)
-                    continue;
                 var duration = TimeSpan.FromHours(serverConfig.Duration);
-                var cutoff = now.Subtract(duration);
-                foreach (var activityEntry in group)
+                var cutoff = DateTime.UtcNow.Subtract(duration);
+                logger.LogDebug("Running checker for server {Server} with cutoff {cutoff}", serverConfig.Server, cutoff);
+                var activities = await activityRepo.GetAssignedForServer(serverConfig.Server);
+                foreach (var activityEntry in activities)
                 {
                     if (activityEntry.LastActivity >= cutoff)
                         continue;
+
                     try
                     {
-                        logger.LogInformation($"Guild {serverId}, User: {activityEntry.User} no longer active");
-                        await activityRepo.SetRemoved(serverId, activityEntry.User, true);
-                        await client.Rest.RemoveRoleAsync(serverId, activityEntry.User, serverConfig.Role.Value);
+                        logger.LogDebug("Removing Role {Role} from User {User} in guild {Guild}", serverConfig.Role, activityEntry.User, activityEntry.Server);
+                        await client.Rest.RemoveRoleAsync(serverConfig.Server, activityEntry.User, serverConfig.Role.Value);
+                        await activityRepo.SetRemovalStatus(serverConfig.Server, activityEntry.User, ActivityEntryStatus.Removed);
                     }
                     catch (Discord.Net.HttpException ex)
                     {
-                        logger.LogError(ex, "HttpException while removing role");
+                        // These errors are caused by server level issues that won't be fixed without intervention, remove configured role so prevent further checking
+                        if (ex.DiscordCode == DiscordErrorCode.MissingPermissions || ex.DiscordCode == DiscordErrorCode.UnknownRole)
+                        {
+                            logger.LogInformation(ex, "While removing role {Role} from user {User} in guild {Guild}, Missing permissions, bot is no longer in guild, or role has been changed", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                            await serverConfigRepo.SetRole(serverConfig.Server, null);
+                            break;
+                        }
+                        else
+                        {
+                            logger.LogError(ex, "HttpException while removing role {Role} from user {User} in guild {Guild}", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                            await activityRepo.SetRemovalStatus(serverConfig.Server, activityEntry.User, ActivityEntryStatus.RemovalError);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error while removing role!");
+                        logger.LogError(ex, "Error while removing role {Role} from user {User} in guild {Guild}", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                        await activityRepo.SetRemovalStatus(serverConfig.Server, activityEntry.User, ActivityEntryStatus.RemovalError);
                     }
                 }
             }

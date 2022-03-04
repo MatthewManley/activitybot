@@ -67,19 +67,29 @@ namespace ActivityBot.Commands
             var activities = await activityRepo.GetAllForUser(slashCommand.User.Id);
             foreach (var activity in activities)
             {
-                if (!activity.Removed)
+                if (activity.RemovalStatus != Domain.Models.ActivityEntryStatus.Removed)
                 {
                     var serverConfig = await serverConfigRepo.Get(activity.Server);
                     try
                     {
                         await discordSocketClient.Rest.RemoveRoleAsync(activity.Server, slashCommand.User.Id, serverConfig.Role.Value);
+                        await activityRepo.Delete(activity);
                     }
                     catch (Discord.Net.HttpException ex)
                     {
                         logger.LogError(ex, "Error in OptOutCommand");
+                        await activityRepo.SetRemovalStatus(activity.Server, activity.User, Domain.Models.ActivityEntryStatus.DeletionError);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error in OptOutCommand");
+                        await activityRepo.SetRemovalStatus(activity.Server, activity.User, Domain.Models.ActivityEntryStatus.DeletionError);
                     }
                 }
-                await activityRepo.Delete(activity);
+                else
+                {
+                    await activityRepo.Delete(activity);
+                }
             }
             await slashCommand.FollowupAsync(text: OptedOut, ephemeral: true);
         }

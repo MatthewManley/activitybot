@@ -8,6 +8,7 @@ namespace Domain.Repos
     {
         Task<ServerConfig> Get(ulong serverId);
         Task<IEnumerable<ServerConfig>> GetAll();
+        Task<IEnumerable<ServerConfig>> GetAllWithRole();
         Task SetRole(ulong serverId, ulong? roleId);
         Task SetInactiveTime(ulong serverId, long time);
     }

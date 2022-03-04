@@ -56,5 +56,12 @@ namespace Infrastructure
             var cmdText = "SELECT * FROM serverconfig;";
             return await dbConnection.QueryAsync<ServerConfig>(cmdText);
         }
+
+        public async Task<IEnumerable<ServerConfig>> GetAllWithRole()
+        {
+            using var dbConnection = await dbConnectionFactory.CreateConnection();
+            var cmdText = "SELECT * FROM serverconfig WHERE role IS NOT null;";
+            return await dbConnection.QueryAsync<ServerConfig>(cmdText);
+        }
     }
 }
