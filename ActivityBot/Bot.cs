@@ -165,6 +165,17 @@ namespace ActivityBot
             if (serverConfig is null || serverConfig.Role is null)
                 return;
 
+            var role = user.Guild.GetRole(serverConfig.Role.Value);
+            if (role is null)
+                return;
+
+            if (!user.Guild.CurrentUser.GuildPermissions.ManageRoles)
+                return;
+
+            var highestRole = user.Guild.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault();
+            if (highestRole is null || highestRole.Position < role.Position)
+                return;
+
             var optedOut = await memoryCache.GetOrCreateAsync($"optout:{user.Id}", async (ICacheEntry cacheEntry) => {
                 cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(2);
                 return await optRepo.Get(user.Id);
@@ -178,9 +189,9 @@ namespace ActivityBot
             memoryCache.Set<object>(user.Id, null, TimeSpan.FromSeconds(60));
 
             await activityRepo.InsertOrUpdate(user.Guild.Id, user.Id, DateTime.UtcNow);
-            var role = user.Guild.GetRole(serverConfig.Role.Value);
-            if (role is not null && !user.Roles.Any(x => x.Id == serverConfig.Role))
+            if (!user.Roles.Any(x => x.Id == serverConfig.Role))
             {
+                logger.LogDebug("Gave role {Role} to user {User} in guild {Guild}", role.Id, user.Id, user.Guild.Id);
                 await user.AddRoleAsync(role);
             }
         }
