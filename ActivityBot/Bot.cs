@@ -89,8 +89,12 @@ namespace ActivityBot
                 var cutoff = DateTime.UtcNow.Subtract(duration);
                 logger.LogDebug("Running checker for server {Server} with cutoff {cutoff}", serverConfig.Server, cutoff);
                 var activities = await activityRepo.GetAllForServerWithStatus(serverConfig.Server, ActivityEntryStatus.Assigned);
+                bool shouldBreak = false;
                 foreach (var activityEntry in activities)
                 {
+                    if (shouldBreak)
+                        break;
+
                     if (activityEntry.LastActivity >= cutoff)
                         continue;
 
@@ -103,21 +107,38 @@ namespace ActivityBot
                     catch (Discord.Net.HttpException ex)
                     {
                         // These errors are caused by server level issues that won't be fixed without intervention, remove configured role so prevent further checking
-                        if (ex.DiscordCode == DiscordErrorCode.MissingPermissions || ex.DiscordCode == DiscordErrorCode.UnknownRole)
+                        switch (ex.DiscordCode)
                         {
-                            logger.LogInformation(ex, "While removing role {Role} from user {User} in guild {Guild}, Missing permissions, bot is no longer in guild, or role has been changed", serverConfig.Role, activityEntry.User, serverConfig.Server);
-                            await serverConfigRepo.SetRole(serverConfig.Server, null);
-                            break;
-                        }
-                        else if (ex.DiscordCode == DiscordErrorCode.UnknownMember)
-                        {
-                            logger.LogInformation("User no longer in server, deleting activity entry");
-                            await activityRepo.Delete(activityEntry);
-                        }
-                        else
-                        {
-                            logger.LogError(ex, "HttpException while removing role {Role} from user {User} in guild {Guild}", serverConfig.Role, activityEntry.User, serverConfig.Server);
-                            await activityRepo.SetRemovalStatus(serverConfig.Server, activityEntry.User, ActivityEntryStatus.RemovalError);
+                            // Bot is no longer in guild
+                            case DiscordErrorCode.MissingPermissions:
+                                logger.LogInformation(ex, "While removing role {Role} from user {User} in guild {Guild}, bot is no longer in guild", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                                await serverConfigRepo.SetRole(serverConfig.Server, null);
+                                shouldBreak = true;
+                                break;
+
+                            // Role no longer exists
+                            case DiscordErrorCode.UnknownRole:
+                                logger.LogInformation(ex, "While removing role {Role} from user {User} in guild {Guild}, role no longer exists", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                                await serverConfigRepo.SetRole(serverConfig.Server, null);
+                                shouldBreak = true;
+                                break;
+
+                            // User is no longer in guild
+                            case DiscordErrorCode.UnknownMember:
+                                logger.LogInformation("While removing role {Role} from user {User} in guild {Guild}, User no longer in guild", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                                await activityRepo.Delete(activityEntry);
+                                break;
+
+                            // The bot doesn't have permission to remove roles
+                            case DiscordErrorCode.InsufficientPermissions:
+                                logger.LogInformation("While removing role {Role} from user {User} in guild {Guild}, Insufficient permissions to remove role", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                                shouldBreak = true;
+                                break;
+
+                            default:
+                                logger.LogError(ex, "Unknown HttpException while removing role {Role} from user {User} in guild {Guild}", serverConfig.Role, activityEntry.User, serverConfig.Server);
+                                await activityRepo.SetRemovalStatus(serverConfig.Server, activityEntry.User, ActivityEntryStatus.RemovalError);
+                                break;
                         }
                     }
                     catch (Exception ex)
