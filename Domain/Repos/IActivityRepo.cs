@@ -9,7 +9,7 @@ namespace Domain.Repos
     {
         Task<ActivityEntry> Get(ulong serverId, ulong userId);
         Task<IEnumerable<ActivityEntry>> GetAllForUser(ulong userId);
-        Task<IEnumerable<ActivityEntry>> GetAssignedForServer(ulong serverId);
+        Task<IEnumerable<ActivityEntry>> GetAllForServerWithStatus(ulong serverId, ActivityEntryStatus activityEntryStatus);
         Task InsertOrUpdate(ulong serverId, ulong userId, DateTime lastActivity, bool removed = false);
         Task<IEnumerable<ActivityEntry>> GetAll();
         Task Delete(ulong serverId, ulong userId);

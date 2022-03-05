@@ -88,7 +88,7 @@ namespace ActivityBot
                 var duration = TimeSpan.FromHours(serverConfig.Duration);
                 var cutoff = DateTime.UtcNow.Subtract(duration);
                 logger.LogDebug("Running checker for server {Server} with cutoff {cutoff}", serverConfig.Server, cutoff);
-                var activities = await activityRepo.GetAssignedForServer(serverConfig.Server);
+                var activities = await activityRepo.GetAllForServerWithStatus(serverConfig.Server, ActivityEntryStatus.Assigned);
                 foreach (var activityEntry in activities)
                 {
                     if (activityEntry.LastActivity >= cutoff)

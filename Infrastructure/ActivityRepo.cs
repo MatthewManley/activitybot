@@ -85,13 +85,14 @@ namespace Infrastructure
             return await dbConnection.QueryAsync<ActivityEntry>(cmdText, parameters);
         }
 
-        public async Task<IEnumerable<ActivityEntry>> GetAssignedForServer(ulong serverId)
+        public async Task<IEnumerable<ActivityEntry>> GetAllForServerWithStatus(ulong serverId, ActivityEntryStatus activityEntryStatus)
         {
             using var dbConnection = await dbConnectionFactory.CreateConnection();
-            var cmdText = "SELECT * FROM activity WHERE server = @server AND removed = 1;";
+            var cmdText = "SELECT * FROM activity WHERE server = @server AND removed = @status;";
             var parameters = new
             {
-                server = serverId
+                server = serverId,
+                status = activityEntryStatus,
             };
             return await dbConnection.QueryAsync<ActivityEntry>(cmdText, parameters);
         }
