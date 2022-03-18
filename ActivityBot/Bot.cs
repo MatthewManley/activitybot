@@ -205,9 +205,10 @@ namespace ActivityBot
                 return;
 
             // Stop excessive updating of user activity
-            if (memoryCache.TryGetValue(user.Id, out var _))
+            var key = (user.Id, user.Guild.Id);
+            if (memoryCache.TryGetValue(key, out var _))
                 return;
-            memoryCache.Set<object>(user.Id, null, TimeSpan.FromSeconds(60));
+            memoryCache.Set<object>(key, null, TimeSpan.FromSeconds(60));
 
             await activityRepo.InsertOrUpdate(user.Guild.Id, user.Id, DateTime.UtcNow);
             if (!user.Roles.Any(x => x.Id == serverConfig.Role))
