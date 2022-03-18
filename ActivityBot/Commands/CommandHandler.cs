@@ -19,6 +19,7 @@ namespace ActivityBot.Commands
             { "help", typeof(HelpCommand) },
             { "stats", typeof(StatsCommand) },
             { "opt", typeof(OptCommand) },
+            { "lastactivity", typeof(LastActivity) },
         };  
 
         public CommandHandler(ILogger<CommandHandler> logger, IServiceProvider serviceProvider)
@@ -78,6 +79,7 @@ namespace ActivityBot.Commands
             services.AddTransient<HelpCommand>();
             services.AddTransient<StatsCommand>();
             services.AddTransient<OptCommand>();
+            services.AddTransient<LastActivity>();
             return services;
         }
     }

@@ -1,0 +1,11 @@
+﻿{
+    "name": "lastactivity",
+    "type": 1,
+    "description": "Get the approximate last active time for a user",
+    "options": [{
+        "name": "user",
+        "description": "The user to get the last activity information for",
+        "type": 6,
+        "required": true
+    }]
+}
