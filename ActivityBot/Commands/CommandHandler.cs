@@ -16,6 +16,8 @@ namespace ActivityBot.Commands
         {
             { "activerole", typeof(ActiveRoleCommand) },
             { "activeduration", typeof(ActiveDurationCommand) },
+            { "commands", typeof(HelpCommand) },
+            { "setup", typeof(HelpCommand) },
             { "help", typeof(HelpCommand) },
             { "stats", typeof(StatsCommand) },
             { "opt", typeof(OptCommand) },

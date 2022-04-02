@@ -1,6 +1,7 @@
 ﻿using Discord.WebSocket;
 using Domain.Repos;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ActivityBot.Commands
@@ -28,6 +29,7 @@ namespace ActivityBot.Commands
 
             "/activerole delete\n" +
             "Stop the bot from assigning and removing roles from users\n\n" +
+            "Requires Administrator permission on the server to run this command\n\n" +
 
             "/activeduration set [number]\n" +
             "Set the number of hours until the active role is removed from a user\n" +
@@ -40,7 +42,11 @@ namespace ActivityBot.Commands
             "Display this message\n\n" +
 
             "**Additional Help:**\n" +
-            "If you need help with the bot, you can join the support server and ask for help there: https://discord.gg/czEz6u4wxB";
+            "If you need help with the bot, you can join the support server and ask for help there: https://discord.gg/czEz6u4wxB\n" +
+            "\n\n**Setup:**\n";
+
+        private const string checkMark = "✅";
+        private const string xMark = "❌";
 
         public async Task Interact(SocketSlashCommand slashCommand)
         {
@@ -52,35 +58,56 @@ namespace ActivityBot.Commands
             }
 
             var serverConfig = await serverConfigRepo.Get(guildUser.Guild.Id);
-            var problemFound = false;
-
-            var problemMessage = "\n\n\n**Potential Problems:**";
             var activeRole = guildUser.Guild.Roles.FirstOrDefault(x => x.Id == serverConfig?.Role);
             var guild = discordSocketClient.GetGuild(guildUser.Guild.Id);
             var clientGuildUser = guild?.GetUser(discordSocketClient.CurrentUser.Id);
             var highestRole = clientGuildUser?.Roles.OrderByDescending(x => x.Position).FirstOrDefault();
+            StringBuilder message = new StringBuilder(helpResponse);
 
-            if (serverConfig?.Role is null || activeRole is null)
+            message.Append(checkMark);
+            message.Append("Active duration is configured to remove the active role ");
+            message.Append(serverConfig?.Duration ?? 24);
+            message.Append(" hours afer a users last activity\n");
+
+            // Active Role Configured
+            if (serverConfig?.Role is not null && activeRole is not null)
             {
-                problemMessage += "\n- An active role is not configured, configure one with the command /activerole set @Role";
-                problemFound = true;
+                message.Append(checkMark);
+                message.Append(" An active role is configured, ");
+                message.Append(activeRole.Mention);
+                message.Append(" will be assigned to active users\n");
             }
-            if (!(clientGuildUser?.GuildPermissions.ManageRoles).GetValueOrDefault(false))
+            else
             {
-                problemMessage += "\n- The bot does not have the \"Manage Roles\" permission, this is required to assign the active role to users";
-                problemFound = true;
-            }
-            if (highestRole is not null && activeRole is not null && highestRole.Position <= activeRole.Position)
-            {
-                problemMessage += "\n- The bot does not have a higher role than the configured active role, this is required to assign the active role to users";
-                problemFound = true;
+                message.Append(xMark);
+                message.Append(" An active role is not configured, configure one with the command /activerole set @Role\n");
             }
 
-            var message = helpResponse;
-            if (problemFound)
-                message += problemMessage;
+            // Manage Roles Permission
+            if ((clientGuildUser?.GuildPermissions.ManageRoles).GetValueOrDefault(false))
+            {
+                message.Append(checkMark);
+                message.Append(" Active Role Bot has the \"Manage Roles\" permission\n");
+            }
+            else
+            {
+                message.Append(xMark);
+                message.Append(" Active Role Bot does not have the \"Manage Roles\" permission, this is required to assign the active role to users\n");
+            }
 
-            await slashCommand.RespondAsync(message, ephemeral: true, allowedMentions: Discord.AllowedMentions.None);
+            // Higher role than active role
+            if (highestRole is not null && activeRole is not null && highestRole.Position > activeRole.Position)
+            {
+                message.Append(checkMark);
+                message.Append("Active Role Bot has a higher role than the configured active role");
+            }
+            else
+            {
+                message.Append(xMark);
+                message.Append(" Active Role Bot does not have a higher role than the configured active role, this is required for the bot to assign the active role to users");
+            }
+
+            await slashCommand.RespondAsync(message.ToString(), ephemeral: true, allowedMentions: Discord.AllowedMentions.None);
         }
     }
 }
