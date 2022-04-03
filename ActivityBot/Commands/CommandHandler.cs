@@ -2,9 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Threading.Tasks;
-using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ActivityBot.Commands
 {
@@ -16,8 +15,8 @@ namespace ActivityBot.Commands
         {
             { "activerole", typeof(ActiveRoleCommand) },
             { "activeduration", typeof(ActiveDurationCommand) },
-            { "commands", typeof(HelpCommand) },
-            { "setup", typeof(HelpCommand) },
+            { "commands", typeof(CommandsCommand) },
+            { "setup", typeof(SetupCommand) },
             { "help", typeof(HelpCommand) },
             { "stats", typeof(StatsCommand) },
             { "opt", typeof(OptCommand) },
@@ -82,6 +81,8 @@ namespace ActivityBot.Commands
             services.AddTransient<StatsCommand>();
             services.AddTransient<OptCommand>();
             services.AddTransient<LastActivity>();
+            services.AddTransient<CommandsCommand>();
+            services.AddTransient<SetupCommand>();
             return services;
         }
     }

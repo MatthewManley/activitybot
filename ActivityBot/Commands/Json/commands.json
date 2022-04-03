@@ -1,0 +1,5 @@
+﻿{
+  "name": "commands",
+  "type": 1,
+  "description": "View a list of the bots commands and a description for each command"
+}
